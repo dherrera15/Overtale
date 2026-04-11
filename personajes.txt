@@ -1,0 +1,15 @@
+Toriel,140,18,40
+Napstablook,95,15,35
+Migosp,85,22,15
+Sans,60,50,10
+Papyrus,110,25,25
+TobyFox,80,10,45
+Undyne,125,38,28
+MonsterKid,95,18,18
+MadDummy,105,26,35
+Alphys,85,15,38
+Mettaton,105,32,22
+Muffet,95,35,18
+Asgore,160,40,35
+Asriel,150,45,30
+Flowey,75,55,10
