@@ -89,3 +89,5 @@ def cargarpers():
 
     archivo.close()
     return personajes
+
+#Commit 3, arreglos de bugs con el git y revision de validaciones"
