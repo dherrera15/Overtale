@@ -30,9 +30,10 @@ class Jugador:
         self.puntaje = 0
     
     def captura(self, character):
-        character.recover()
-        self.chosen.append(character)
-        self.puntaje += 1
+        if character not in self.chosen:
+            character.recover()
+            self.chosen.append(character)
+            self.puntaje += 1
     
     def loss(self, character):
         if character in self.chosen:
@@ -90,4 +91,21 @@ def cargarpers():
     archivo.close()
     return personajes
 
-#Commit 3, arreglos de bugs con el git y revision de validaciones"
+def attack(atkr, dfdr):
+    dmg = atkr.attack - dfdr.defense
+
+    if dmg <= 0:
+        dmg = 1
+    
+    dfdr.dano(dmg)
+        
+    print(atkr.name, "ataca a", dfdr.name)
+    print("Daño:", dmg)
+    print(dfdr.name, "HP:", dfdr.currhp)
+
+characters = cargarpers()
+
+p1 = characters[0]
+p2 = characters[1]
+
+attack(p1, p2)
