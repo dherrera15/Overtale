@@ -34,6 +34,10 @@ class Jugador:
         self.chosen.append(character)
         self.puntaje += 1
     
+    def loss(self, character):
+        if character in self.chosen:
+            self.chosen.remove(character)
+    
     def playervivos(self):
         for chara in self.chosen:
             if chara.estadovida():
@@ -44,6 +48,15 @@ class Hollow:
     def __init__(self, name, characters):
         self.name = name
         self.enemies = characters
+
+    def captura(self, character):
+        if character not in self.enemies:
+            character.recover()
+            self.enemies.append(character)
+    
+    def loss(self, character):
+        if character in self.enemies:
+            self.enemies.remove(character)
     
     def persact(self):
         enemalive = []
