@@ -96,16 +96,37 @@ def attack(atkr, dfdr):
 
     if dmg <= 0:
         dmg = 1
-    
+
     dfdr.dano(dmg)
-        
-    print(atkr.name, "ataca a", dfdr.name)
-    print("Daño:", dmg)
-    print(dfdr.name, "HP:", dfdr.currhp)
 
-characters = cargarpers()
+def turn(player, hollow, chosen):
+    enemy = hollow.persact()
 
-p1 = characters[0]
-p2 = characters[1]
+    if enemy is None:
+        return
+    
+    attack(chosen, enemy)
 
-attack(p1, p2)
+    
+
+    if not enemy.estadovida():
+        hollow.loss(enemy)
+        player.captura(enemy)
+        return
+    
+    attack(enemy, chosen)
+
+    if not chosen.estadovida():
+        player.loss(chosen)
+        hollow.captura(chosen)
+
+
+# Codigo anterior para entrega, debajo va la prueba del commit
+ 
+personajes = cargarpers()
+
+player = Jugador("x")
+player.chosen = personajes[:3]
+hollow = Hollow("Ruins", personajes[3:6])
+
+turn(player, hollow, player.chosen[0])
