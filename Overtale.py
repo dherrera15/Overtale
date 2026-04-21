@@ -100,6 +100,16 @@ def attack(atkr, dfdr):
     dfdr.dano(dmg)
 
 def turn(player, hollow, chosen):
+    
+    #BASE 1
+    if not player.playervivos():
+        print("Perdiste todos los personajes")
+        return
+    #BASE 2
+    if not hollow.hollowvivos():
+        print(f"Derrotaste al Hollow {hollow.name}")
+        return
+    
     enemy = hollow.persact()
 
     if enemy is None:
@@ -107,26 +117,25 @@ def turn(player, hollow, chosen):
     
     attack(chosen, enemy)
 
-    
-
     if not enemy.estadovida():
         hollow.loss(enemy)
         player.captura(enemy)
-        return
-    
-    attack(enemy, chosen)
+    else:
+        attack(enemy, chosen)
 
-    if not chosen.estadovida():
-        player.loss(chosen)
-        hollow.captura(chosen)
+        if not chosen.estadovida():
+            player.loss(chosen)
+            hollow.captura(chosen)
+    #RECURSIVA
+    turn(player, hollow, chosen)
 
+#PRUEBA RECURSIVIDAD
 
-# Codigo anterior para entrega, debajo va la prueba del commit
- 
 personajes = cargarpers()
-
-player = Jugador("x")
+player = Jugador("Ayo")
 player.chosen = personajes[:3]
-hollow = Hollow("Ruins", personajes[3:6])
+
+hollow = Hollow("Snowdin", personajes [3:6])
 
 turn(player, hollow, player.chosen[0])
+
