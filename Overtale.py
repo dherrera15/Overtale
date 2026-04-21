@@ -39,11 +39,13 @@ class Jugador:
         if character in self.chosen:
             self.chosen.remove(character)
     
-    def playervivos(self):
-        for chara in self.chosen:
-            if chara.estadovida():
-                return True
-        return False
+    def playervivos(self, i = 0):
+        if i >= len(self.chosen):
+            return False
+        if self.chosen[i].estadovida():
+            return True
+        
+        return self.playervivos(i + 1)
     
 class Hollow:
     def __init__(self, name, characters):
@@ -60,21 +62,31 @@ class Hollow:
             self.enemies.remove(character)
     
     def persact(self):
-        enemalive = []
-        for chara in self.enemies:
-            if chara.estadovida():
-                enemalive.append(chara)
+        enemalive = self.persact_aux()
         
         if len(enemalive) == 0:
             return None
         else:
             return random.choice(enemalive)
     
-    def hollowvivos(self):
-        for chara in self.enemies:
-            if chara.estadovida():
-                return True
-        return False
+    def persact_aux(self, i = 0, alive = None):
+        if alive is None:
+            alive = []
+
+        if i >= len(self.enemies):
+            return alive
+        
+        if self.enemies[i].estadovida():
+            alive.append(self.enemies[i])
+        
+        return self.persact_aux(i + 1, alive)
+    
+    def hollowvivos(self, i = 0):
+        if i >= len(self.enemies):
+            return False
+        if self.chosen[i].estadovida():
+            return True
+        return self.hollowvivos(i + 1)
 
 def cargarpers():
     personajes = []
