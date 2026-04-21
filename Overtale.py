@@ -100,14 +100,10 @@ def attack(atkr, dfdr):
     dfdr.dano(dmg)
 
 def turn(player, hollow, chosen):
-    
-    #BASE 1
     if not player.playervivos():
-        print("Perdiste todos los personajes")
         return
-    #BASE 2
+    
     if not hollow.hollowvivos():
-        print(f"Derrotaste al Hollow {hollow.name}")
         return
     
     enemy = hollow.persact()
@@ -126,16 +122,66 @@ def turn(player, hollow, chosen):
         if not chosen.estadovida():
             player.loss(chosen)
             hollow.captura(chosen)
-    #RECURSIVA
+
     turn(player, hollow, chosen)
 
-#PRUEBA RECURSIVIDAD
+def show_chara(characters):
+    print("\n--- PERSONAJES DISPONIBLES")
+    for chara, atr, in enumerate(characters):
+        print(f"{chara}: {atr.name} | HP: {atr.maxhp} | ATK: {atr.attack} | DEF: {atr.defense}")
 
-personajes = cargarpers()
-player = Jugador("Ayo")
-player.chosen = personajes[:3]
+def selecta():
+    avatars = ["Frisk", "Doggo", "Temmie"]
+    print("\n--- AVATARES")
+    for order, avatar in enumerate(avatars):
+        print(order, "-", avatar)
+    
+    index = int(input("Elige avatar (0-2): "))
+    return avatars[index]
 
-hollow = Hollow("Snowdin", personajes [3:6])
+def selectc(characters):
+    chosen = []
 
-turn(player, hollow, player.chosen[0])
+    while len(chosen) < 3:
 
+        print("\n--- ELIJA 3 PERSONAJES")
+        for chara, name in enumerate(characters):
+            if chara in chosen:
+                status = "check"
+            else:
+                status = ""
+            print(f"{chara}: {name.name} {status}")
+
+        index = int(input("Seleccion indice: "))
+
+        if index < 0 or index >= len(characters):
+            print("No valido")
+        elif characters[index] in chosen:
+            print("Ya elegido")
+        else:
+            chosen.append(characters[index])
+            print("Agregado ", characters[index].name)
+    return chosen
+
+def start():
+    personajes = cargarpers()
+
+    print("\n=== OVERTALE ===")
+
+    nombre = input("Nombre de jugador: ")
+    player = Jugador(nombre)
+
+    avatar = selecta()
+
+    player.chosen = selectc(personajes)
+
+    print("\n--- RESUMEN ---")
+    print("Jugador: ", player.name)
+    print("Avatar:", avatar)
+    print("\nPersonajes elegidos:")
+    for chara in player.chosen:
+        print("-", chara.name)
+    return player, personajes
+
+if __name__ == "__main__":
+    player, personajes = start()
