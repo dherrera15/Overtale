@@ -142,6 +142,9 @@ def enemyturn(player, hollow, chosen, currenemy):
         hollow.captura(chosen)
         chosen = enemyturn_aux(player.chosen)
     
+    if chosen is None:
+        return chosen, currenemy
+    
     return chosen, currenemy
 
 def enemyturn_aux(chosenlist, chara = 0):
@@ -152,6 +155,28 @@ def enemyturn_aux(chosenlist, chara = 0):
         return chosenlist[chara]
     
     return enemyturn_aux(chosenlist, chara + 1)
+
+def showchosen(player, i = 0):
+    if i >= len(player.chosen):
+        return
+    
+    chara = player.chosen[i]
+    status = "VIVO"
+    print(f"{i}: {chara.name} ({status})")
+
+    showchosen(player, i + 1)
+
+def selectingame(player):
+    print("\n--- YOUR TEAM")
+    showchosen(player)
+
+    index = int(input("Choose the one to fight: "))
+
+    if index < 0 or index >= len(player.chosen):
+        print("Not valid")
+        return selectingame(player)
+    
+    return player.chosen[index]
 
 def batalla(player, hollow, chosen, currenemy):
     if not player.playervivos():
@@ -169,6 +194,8 @@ def batalla(player, hollow, chosen, currenemy):
     act = input("Elige: ")
 
     if act == "1":
+        if currenemy is None:
+            return batalla(player, hollow, chosen, currenemy)
         attack(chosen, currenemy)
 
         if not currenemy.estadovida():
@@ -176,8 +203,11 @@ def batalla(player, hollow, chosen, currenemy):
             player.captura(currenemy)
             currenemy = hollow.persact()
     elif act == "2":
-        print("Todavía no está esta sección del juego")
-        return batalla(player, hollow, chosen, currenemy)
+        newchosen = selectingame(player)
+
+        if newchosen != chosen:
+            print(f"Changed to {newchosen.name}")
+            chosen = newchosen
     
     chosen, currenemy = enemyturn(player, hollow, chosen, currenemy)
 
@@ -203,7 +233,7 @@ def selectc(characters):
     while len(chosen) < 3:
         print("\n--- CHOOSE 3 CHARACTERS")
         for chara, name in enumerate(characters):
-            if chara in chosen:
+            if characters[chara] in chosen:
                 status = "check"
             else:
                 status = ""
