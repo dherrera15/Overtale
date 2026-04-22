@@ -31,11 +31,15 @@ class Personaje:
     
     def estadovida(self):
         return not self.ko
+    
+    def separate(self):
+        return Personaje(self.name, self.maxhp, self.attack, self.defense)
 
 class Jugador:
     def __init__(self, name):
         self.name = name
         self.chosen = []
+        self.team = []
         self.puntaje = 0
     
     def captura(self, character):
@@ -114,11 +118,11 @@ def cargarpers():
 
 def hollowtypes(personajes):
     return [
-        Hollow("Ruins", personajes[0:3]),
-        Hollow("Snowdin", personajes[3:6]),
-        Hollow("Waterfall", personajes[6:9]),
-        Hollow("Hotland", personajes[9:12]),
-        Hollow("Castle", personajes[12:15])
+        Hollow("Ruins", [p.separate() for p in personajes[0:3]]),
+        Hollow("Snowdin", [p.separate() for p in personajes[3:6]]),
+        Hollow("Waterfall", [p.separate() for p in personajes[6:9]]),
+        Hollow("Hotland", [p.separate() for p in personajes[9:12]]),
+        Hollow("Castle", [p.separate() for p in personajes[12:15]])
     ]
 
 def attack(atkr, dfdr):
@@ -158,7 +162,7 @@ def enemyturn(player, hollow, chosen, currenemy):
     if not chosen.estadovida():
         player.loss(chosen)
         hollow.captura(chosen)
-        chosen = pepejuana(player.chosen)
+        chosen = pepejuana(player.team)
     
     if chosen is None:
         return chosen, currenemy
@@ -217,6 +221,7 @@ def startwindow():
         
         player = Jugador(name_entry.get())
         player.chosen = chosen
+        player.team = chosen.copy()
         player.hollowdefeat = []
 
         mapwindow(player, personajes)
@@ -243,15 +248,37 @@ def mapwindow(player, personajes):
         def enterhollow(hollow=h):
             if hollow.name in player.hollowdefeat:
                 return
-            battlewindow(player, hollow, personajes)
+            prebattleselectwindow(player, hollow, personajes)
         
         tk.Button(window, text=h.name + status, command=enterhollow).pack()
+
+def prebattleselectwindow(player, hollow, personajes):
+    clear()
+
+    tk.Label(window, text="Choose 3 characters").pack()
+
+    varslist = []
+
+    for chara in player.chosen:
+        var = tk.IntVar()
+        tk.Checkbutton(window, text=chara.name, variable=var).pack()
+        varslist.append((var, chara))
+
+    def confirmteam():
+        selected = [c for v, c in varslist if v.get() == 1]
+
+        if len(selected) != 3:
+            print("Must choose 3")
+            return
+
+        player.team = selected
+        battlewindow(player, hollow, personajes)   
 
 def battlewindow(player, hollow, personajes, chosen=None):
     clear()
 
     if chosen is None:
-        chosen = pepejuana(player.chosen)
+        chosen = pepejuana(player.team)
     
     enemy = hollow.persact()
 
@@ -300,6 +327,10 @@ def battlewindow(player, hollow, personajes, chosen=None):
 
             if enemy is None:
                 player.hollowdefeat.append(hollow.name)
+
+                for chara in player.chosen:
+                    chara.recover()
+                    
                 mapwindow(player, personajes)
                 return
         
@@ -310,7 +341,7 @@ def battlewindow(player, hollow, personajes, chosen=None):
 
         tk.Label(window, text="Choose character").pack()
 
-        for chara in player.chosen:
+        for chara in player.team:
             def chooseinbattle(newchosen=chara):
                 battlewindow(player, hollow, personajes, newchosen)
             tk.Button(window, text=chara.name, command=chooseinbattle).pack()
