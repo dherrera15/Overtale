@@ -3,7 +3,7 @@ import tkinter as tk
 
 window = tk.Tk()
 window.title("Overtale")
-window.geometry("500x500")
+window.geometry("700x700")
 
 def clear():
     for widget in window.winfo_children():
