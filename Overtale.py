@@ -268,11 +268,13 @@ def prebattleselectwindow(player, hollow, personajes):
         selected = [c for v, c in varslist if v.get() == 1]
 
         if len(selected) != 3:
-            print("Must choose 3")
+            tk.Label(window, text="Must choose 3", fg="red").pack()
             return
 
         player.team = selected
         battlewindow(player, hollow, personajes)   
+    
+    tk.Button(window, text="BATTLE!", command=confirmteam).pack()
 
 def battlewindow(player, hollow, personajes, chosen=None):
     clear()
