@@ -1,4 +1,13 @@
 import random
+import tkinter as tk
+
+window = tk.Tk()
+window.title("Overtale")
+window.geometry("500x500")
+
+def clear():
+    for widget in window.winfo_children():
+        widget.destroy()
 
 class Personaje:
     def __init__(self, name, hp, atk, df):
@@ -103,6 +112,15 @@ def cargarpers():
     archivo.close()
     return personajes
 
+def hollowtypes(personajes):
+    return [
+        Hollow("Ruins", personajes[0:3]),
+        Hollow("Snowdin", personajes[3:6]),
+        Hollow("Waterfall", personajes[6:9]),
+        Hollow("Hotland", personajes[9:12]),
+        Hollow("Castle", personajes[12:15])
+    ]
+
 def attack(atkr, dfdr):
     dmg = atkr.attack - dfdr.defense
 
@@ -140,136 +158,168 @@ def enemyturn(player, hollow, chosen, currenemy):
     if not chosen.estadovida():
         player.loss(chosen)
         hollow.captura(chosen)
-        chosen = enemyturn_aux(player.chosen)
+        chosen = pepejuana(player.chosen)
     
     if chosen is None:
         return chosen, currenemy
     
     return chosen, currenemy
 
-def enemyturn_aux(chosenlist, chara = 0):
+def pepejuana(chosenlist, chara = 0):
     if chara >= len(chosenlist):
         return None
     
     if chosenlist[chara].estadovida():
         return chosenlist[chara]
     
-    return enemyturn_aux(chosenlist, chara + 1)
+    return pepejuana(chosenlist, chara + 1)
 
-def showchosen(player, i = 0):
-    if i >= len(player.chosen):
-        return
-    
-    chara = player.chosen[i]
-    status = "VIVO"
-    print(f"{i}: {chara.name} ({status})")
+# PANTALLAS TKINTER
+def endwindow(player):
+    clear()
 
-    showchosen(player, i + 1)
+    tk.Label(window, text="CONGRATULATIONS!!! YOU SAVED THE STORY", font=("Arial", 20)).pack()
+    tk.Label(window, text=f"Total points: {player.puntaje}", font=("Arial", 14)).pack()
 
-def selectingame(player):
-    print("\n--- YOUR TEAM")
-    showchosen(player)
+    tk.Button(window, text="Go back to start", command=startwindow).pack()
 
-    index = int(input("Choose the one to fight: "))
+def startwindow():
+    clear()
 
-    if index < 0 or index >= len(player.chosen):
-        print("Not valid")
-        return selectingame(player)
-    
-    return player.chosen[index]
-
-def batalla(player, hollow, chosen, currenemy):
-    if not player.playervivos():
-        print("You lost")
-        return
-    
-    if not hollow.hollowvivos():
-        print("You won, the hollow is defeated!")
-        return
-    
-    print("\nYour turn:")
-    print("1: Attack")
-    print("2: Change character")
-
-    act = input("Elige: ")
-
-    if act == "1":
-        if currenemy is None:
-            return batalla(player, hollow, chosen, currenemy)
-        attack(chosen, currenemy)
-
-        if not currenemy.estadovida():
-            hollow.loss(currenemy)
-            player.captura(currenemy)
-            currenemy = hollow.persact()
-    elif act == "2":
-        newchosen = selectingame(player)
-
-        if newchosen != chosen:
-            print(f"Changed to {newchosen.name}")
-            chosen = newchosen
-    
-    chosen, currenemy = enemyturn(player, hollow, chosen, currenemy)
-
-    return batalla(player, hollow, chosen, currenemy)
-
-def show_chara(characters):
-    print("\n--- AVAILABLE CHARACTERS")
-    for chara, atr, in enumerate(characters):
-        print(f"{chara}: {atr.name} | HP: {atr.maxhp} | ATK: {atr.attack} | DEF: {atr.defense}")
-
-def selecta():
-    avatars = ["Frisk", "Doggo", "Temmie"]
-    print("\n--- AVATARS")
-    for order, avatar in enumerate(avatars):
-        print(order, "-", avatar)
-    
-    index = int(input("Elige avatar (0-2): "))
-    return avatars[index]
-
-def selectc(characters):
-    chosen = []
-
-    while len(chosen) < 3:
-        print("\n--- CHOOSE 3 CHARACTERS")
-        for chara, name in enumerate(characters):
-            if characters[chara] in chosen:
-                status = "check"
-            else:
-                status = ""
-            print(f"{chara}: {name.name} {status}")
-
-        index = int(input("Index selection: "))
-
-        if index < 0 or index >= len(characters):
-            print("Not valid")
-        elif characters[index] in chosen:
-            print("Already chosen")
-        else:
-            chosen.append(characters[index])
-            print("Added ", characters[index].name)
-    
-    return chosen
-
-def start():
     personajes = cargarpers()
+    
+    tk.Label(window, text="OVERTALE", font=("Arial", 20)).pack()
 
-    print("\n=== OVERTALE ===")
+    tk.Label(window, text="Name:").pack()
+    name_entry = tk.Entry(window)
+    name_entry.pack()
 
-    nombre = input("Player name: ")
-    player = Jugador(nombre)
+    avatar_var = tk.StringVar()
+    tk.Label(window, text="Choose Avatar").pack()
 
-    avatar = selecta()
+    for a in ["Frisk", "Doggo", "Temmie"]:
+        tk.Radiobutton(window, text=a, variable=avatar_var, value=a).pack()
 
-    player.chosen = selectc(personajes)
+    tk.Label(window, text="Choose 3 characters").pack()
 
-    print("\n--- SUMMARY ---")
-    print("Player: ", player.name)
-    print("Avatar:", avatar)
-    print("\nChosen characters:")
-    for chara in player.chosen:
-        print("-", chara.name)
-    return player, personajes
+    chara_vars = []
+    for chara in personajes:
+        var = tk.IntVar()
+        tk.Checkbutton(window, text=chara.name, variable=var).pack()
+        chara_vars.append((var, chara))
+    
+    def startgame():
+        chosen = [c for v, c in chara_vars if v.get()==1]
+
+        if len(chosen) != 3:
+            print("You must choose 3 characters")
+            return
+        
+        player = Jugador(name_entry.get())
+        player.chosen = chosen
+        player.hollowdefeat = []
+
+        mapwindow(player, personajes)
+    
+    tk.Button(window, text="Start Game", command=startgame).pack()
+
+def mapwindow(player, personajes):
+    clear()
+
+    tk.Label(window, text="MAPA", font=("Arial", 16)).pack()
+    tk.Label(window, text=f"Puntaje: {player.puntaje}", font=("Arial", 12)).pack()
+
+    hollows = hollowtypes(personajes)
+
+    if len(player.hollowdefeat) == 5:
+        endwindow(player)
+        return
+    
+    for h in hollows:
+        if h.name in player.hollowdefeat:
+            status = "DONE"
+        else:
+            status = ""
+        def enterhollow(hollow=h):
+            if hollow.name in player.hollowdefeat:
+                return
+            battlewindow(player, hollow, personajes)
+        
+        tk.Button(window, text=h.name + status, command=enterhollow).pack()
+
+def battlewindow(player, hollow, personajes, chosen=None):
+    clear()
+
+    if chosen is None:
+        chosen = pepejuana(player.chosen)
+    
+    enemy = hollow.persact()
+
+    texto = tk.Label(window, font=("Arial", 12))
+    texto.pack()
+
+    labelpoint = tk.Label(window, font=("Arial", 12))
+    labelpoint.pack()
+
+    frame = tk.Frame(window)
+    frame.pack()
+
+    def update():
+        if enemy is None:
+            return
+        
+        texto.config(
+            text=f"{chosen.name} HP: {chosen.currhp}\n"
+                 f"{enemy.name} HP: {enemy.currhp}"
+        )
+
+        labelpoint.config(text=f"Puntaje: {player.puntaje}")
+    
+    def enemturntk():
+        nonlocal chosen, enemy
+        chosen, enemy = enemyturn(player, hollow, chosen, enemy)
+
+        if chosen is None:
+            startwindow()
+            return
+        
+        update()
+    
+    def attacktk():
+        nonlocal chosen, enemy
+
+        if enemy is None:
+            return
+        
+        attack(chosen, enemy)
+
+        if not enemy.estadovida():
+            hollow.loss(enemy)
+            player.captura(enemy)
+            enemy = hollow.persact()
+
+            if enemy is None:
+                player.hollowdefeat.append(hollow.name)
+                mapwindow(player, personajes)
+                return
+        
+        enemturntk()
+    
+    def changetk():
+        clear()
+
+        tk.Label(window, text="Choose character").pack()
+
+        for chara in player.chosen:
+            def chooseinbattle(newchosen=chara):
+                battlewindow(player, hollow, personajes, newchosen)
+            tk.Button(window, text=chara.name, command=chooseinbattle).pack()
+    
+    tk.Button(frame, text="Attack", command=attacktk).pack()
+    tk.Button(frame, text="Change", command=changetk).pack()
+
+    update()
 
 if __name__ == "__main__":
-    player, personajes = start()
+    startwindow()
+    window.mainloop()
