@@ -1,10 +1,11 @@
 import random
 import tkinter as tk
+from tkinter import messagebox
 from PIL import Image, ImageTk
 
 window = tk.Tk()
 window.title("Overtale")
-window.geometry("1600x900")
+window.geometry("1280x720")
 
 def clear():
     for widget in window.winfo_children():
@@ -193,7 +194,7 @@ def startwindow():
     personajes = cargarpers()
 
     bkgnd = Image.open("images/backgrounds/start.png")
-    bkgnd = bkgnd.resize((1600, 900))
+    bkgnd = bkgnd.resize((1280, 720))
     bkgnd = ImageTk.PhotoImage(bkgnd)
     bglabel = tk.Label(window, image=bkgnd)
     bglabel.image = bkgnd
@@ -233,8 +234,23 @@ def startwindow():
 
     tk.Label(window, text="Choose 3 characters", font=("Arial", 14), bg="black", fg="white").pack()
 
-    charsframe = tk.Frame(window, bg="black")
-    charsframe.pack()
+    container = tk.Frame(window, bg="black")
+    container.pack(pady=10)
+
+    canvas = tk.Canvas(container, bg="black", highlightthickness=0, width=900, height=300)
+    scrollbar = tk.Scrollbar(container, orient="vertical", command=canvas.yview)
+
+    scrollframe = tk.Frame(canvas, bg="black")
+    scrollframe.bind(
+        "<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+    )
+
+    canvas.create_window((450,0), window=scrollframe, anchor="n")
+    canvas.configure(yscrollcommand=scrollbar.set)
+    canvas.bind_all("<MouseWheel>", lambda e: canvas.yview_scroll(int(-1*(e.delta/120)), "units"))
+
+    canvas.pack(side="left", fill="both", expand=True)
+    scrollbar.pack(side="right", fill="y")
 
     chara_vars = []
 
@@ -246,20 +262,37 @@ def startwindow():
         img = ImageTk.PhotoImage(img)
 
         cb = tk.Checkbutton(
-            charsframe, text=chara.name, image=img, compound="top",
+            scrollframe, text=chara.name, image=img, compound="top",
             variable=var, bg="black", fg="white", selectcolor="gray"
         )
 
         cb.image = img
-        cb.grid(row=i//3, column=i%3, padx=10, pady=8)
+        cb.grid(row=i//4, column=i%4, padx=15, pady=12)
 
         chara_vars.append((var, chara))
     
     def startgame():
         chosen = [c for v, c in chara_vars if v.get()==1]
 
+        if name_entry.get().strip() == "":
+            messagebox.showwarning(
+                "Name Required!",
+                "Please enter your name."
+            )
+            return
+
+        if avatar_var.get() == "":
+            messagebox.showwarning(
+                "Avatar Required!",
+                "Please choose an avatar."
+            )
+            return
+
         if len(chosen) != 3:
-            print("You must choose 3 characters")
+            messagebox.showwarning(
+                "Non-valid Team!",
+                "You must choose exactly 3 characters."
+            )
             return
         
         player = Jugador(name_entry.get())
