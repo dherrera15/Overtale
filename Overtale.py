@@ -1,9 +1,10 @@
 import random
 import tkinter as tk
+from PIL import Image, ImageTk
 
 window = tk.Tk()
 window.title("Overtale")
-window.geometry("700x700")
+window.geometry("1600x900")
 
 def clear():
     for widget in window.winfo_children():
@@ -189,27 +190,69 @@ def endwindow(player):
 
 def startwindow():
     clear()
-
     personajes = cargarpers()
-    
-    tk.Label(window, text="OVERTALE", font=("Arial", 20)).pack()
 
-    tk.Label(window, text="Name:").pack()
-    name_entry = tk.Entry(window)
+    bkgnd = Image.open("images/backgrounds/start.png")
+    bkgnd = bkgnd.resize((1600, 900))
+    bkgnd = ImageTk.PhotoImage(bkgnd)
+    bglabel = tk.Label(window, image=bkgnd)
+    bglabel.image = bkgnd
+    bglabel.place(x=0, y=0, relwidth = 1, relheight = 1)
+    
+    tk.Label(window, text="OVERTALE", font=("Arial", 28, "bold"), bg="black", fg="white").pack(pady=10)
+
+    tk.Label(window, text="Name:", bg="black", fg="white").pack()
+    name_entry = tk.Entry(window, font=("Arial", 12))
     name_entry.pack()
 
     avatar_var = tk.StringVar()
-    tk.Label(window, text="Choose Avatar").pack()
+    avatar_var.set("")
+    tk.Label(window, text="Choose avatar", font=("Arial", 14), bg="black", fg="white").pack()
 
-    for a in ["Frisk", "Doggo", "Temmie"]:
-        tk.Radiobutton(window, text=a, variable=avatar_var, value=a).pack()
+    avatars = {
+        "Frisk": "images/avatars/frisk.png",
+        "Doggo": "images/avatars/doggo.png",
+        "Temmie": "images/avatars/temmie.png"
+    }
 
-    tk.Label(window, text="Choose 3 characters").pack()
+    avatarframe = tk.Frame(window, bg="black")
+    avatarframe.pack(pady=10)
+    
+    for a, path in avatars.items():
+        img = Image.open(path)
+        img = img.resize((120, 120))
+        img = ImageTk.PhotoImage(img)
+
+        rb = tk.Radiobutton(
+            avatarframe, text=a, image=img, compound="top",
+            variable=avatar_var, value=a, bg="black",
+            fg="white", selectcolor="gray"
+        )
+        rb.image = img
+        rb.pack(side="left", padx=15)
+
+    tk.Label(window, text="Choose 3 characters", font=("Arial", 14), bg="black", fg="white").pack()
+
+    charsframe = tk.Frame(window, bg="black")
+    charsframe.pack()
 
     chara_vars = []
-    for chara in personajes:
+
+    for i, chara in enumerate(personajes):
         var = tk.IntVar()
-        tk.Checkbutton(window, text=chara.name, variable=var).pack()
+
+        img = Image.open(f"images/characters/{chara.name.lower()}.png")
+        img = img.resize((90,90))
+        img = ImageTk.PhotoImage(img)
+
+        cb = tk.Checkbutton(
+            charsframe, text=chara.name, image=img, compound="top",
+            variable=var, bg="black", fg="white", selectcolor="gray"
+        )
+
+        cb.image = img
+        cb.grid(row=i//3, column=i%3, padx=10, pady=8)
+
         chara_vars.append((var, chara))
     
     def startgame():
@@ -226,7 +269,10 @@ def startwindow():
 
         mapwindow(player, personajes)
     
-    tk.Button(window, text="Start Game", command=startgame).pack()
+    tk.Button(
+        window, text="START GAME", font=("Arial", 16, "bold"),
+        bg="white", fg="black", command=startgame
+    ).pack(pady=20)
 
 def mapwindow(player, personajes):
     clear()
