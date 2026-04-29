@@ -310,26 +310,60 @@ def startwindow():
 def mapwindow(player, personajes):
     clear()
 
-    tk.Label(window, text="MAPA", font=("Arial", 16)).pack()
-    tk.Label(window, text=f"Puntaje: {player.puntaje}", font=("Arial", 12)).pack()
-
-    hollows = hollowtypes(personajes)
-
     if len(player.hollowdefeat) == 5:
         endwindow(player)
         return
     
+    bkgnd = Image.open("images/backgrounds/map.png")
+    bkgnd = bkgnd.resize((1280, 720))
+    bkgnd = ImageTk.PhotoImage(bkgnd)
+
+    bglabel = tk.Label(window, image=bkgnd)
+    bglabel.image = bkgnd
+    bglabel.place(x=0, y=0, relwidth=1, relheight=1)
+
+
+    tk.Label(
+        window, text="WORLD MAP", font=("Arial", 22, "bold"),
+        bg="black", fg="white"
+    ).place(x=20, y=20)
+
+    tk.Label(
+        window, text=f"Score: {player.puntaje}", font=("Arial", 16, "bold"),
+        bg="black", fg="white"
+    ).place(x=20, y = 75)
+
+    hollows = hollowtypes(personajes)
+
+    positions = {
+        "Ruins": (120, 550),
+        "Snowdin": (350, 500),
+        "Waterfall":(850, 520),
+        "Hotland": (900, 350),
+        "Castle": (530, 250)
+    }
+
+    
+    
     for h in hollows:
         if h.name in player.hollowdefeat:
-            status = "DONE"
+            text = h.name + "DEFEATED"
+            color = "gray"
         else:
-            status = ""
+            text = h.name
+            color = "white"
+
         def enterhollow(hollow=h):
             if hollow.name in player.hollowdefeat:
                 return
             prebattleselectwindow(player, hollow, personajes)
-        
-        tk.Button(window, text=h.name + status, command=enterhollow).pack()
+
+        x,y = positions[h.name]
+
+        tk.Button(
+            window, text=text, font=("Arial", 14, "bold"),
+            bg=color, fg="black", width=10, command=enterhollow
+        ).place(x=x, y=y)
 
 def prebattleselectwindow(player, hollow, personajes):
     clear()
