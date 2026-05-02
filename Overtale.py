@@ -103,28 +103,42 @@ class Hollow:
         return self.persact_aux(lista, i + 1)
 
 def cargarpers():
-    personajes = []
     archivo = open("personajes.txt", "r")
-    for fila in archivo:
-        atributo = fila.strip().split(",")
-        name = atributo[0]
-        hp = int(atributo[1])
-        atk = int(atributo[2])
-        df = int(atributo[3])
-        chara = Personaje(name, hp, atk, df)
-        personajes.append(chara)
-
+    personajes = cargarpers_aux(archivo, [])
     archivo.close()
     return personajes
 
+def cargarpers_aux(archivo, lista):
+    fila = archivo.readline()
+
+    if fila == "":
+        return lista
+    
+    atributo = fila.strip().split(",")
+    name = atributo[0]
+    hp = int(atributo[1])
+    atk = int(atributo[2])
+    df = int(atributo[3])
+    chara = Personaje(name, hp, atk, df)
+    lista.append(chara)
+
+    return cargarpers_aux(archivo, lista)
+
 def hollowtypes(personajes):
     return [
-        Hollow("Ruins", [p.separate() for p in personajes[0:3]]),
-        Hollow("Snowdin", [p.separate() for p in personajes[3:6]]),
-        Hollow("Waterfall", [p.separate() for p in personajes[6:9]]),
-        Hollow("Hotland", [p.separate() for p in personajes[9:12]]),
-        Hollow("Castle", [p.separate() for p in personajes[12:15]])
+        Hollow("Ruins", hollowtypes_aux(personajes, 0, 3, 0)),
+        Hollow("Snowdin", hollowtypes_aux(personajes, 3, 6, 0)),
+        Hollow("Waterfall", hollowtypes_aux(personajes, 6, 9, 0)),
+        Hollow("Hotland", hollowtypes_aux(personajes, 9, 12, 0)),
+        Hollow("Castle", hollowtypes_aux(personajes, 12, 15, 0))
     ]
+
+def hollowtypes_aux(personajes, desde, hasta, i):
+    if desde + i >= hasta:
+        return []
+    
+    chara = personajes[desde + i].separate()
+    return [chara] + hollowtypes_aux(personajes, desde, hasta, i + 1)
 
 def attack(atkr, dfdr):
     dmg = atkr.attack - dfdr.defense
@@ -181,10 +195,31 @@ def pepejuana(chosenlist, chara = 0):
 def endwindow(player):
     clear()
 
-    tk.Label(window, text="CONGRATULATIONS!!! YOU SAVED THE STORY", font=("Arial", 20)).pack()
-    tk.Label(window, text=f"Total points: {player.puntaje}", font=("Arial", 14)).pack()
+    bkgnd = Image.open("images/backgrounds/start.png")
+    bkgnd = bkgnd.resize((1280, 720))
+    bkgnd = ImageTk.PhotoImage(bkgnd)
 
-    tk.Button(window, text="Go back to start", command=startwindow).pack()
+    bglabel = tk.Label(window, image=bkgnd)
+    bglabel.image = bkgnd
+    bglabel.place(x=0, y=0, relwidth=1, relheight=1)
+
+    frame = tk.Frame(window, bg="black")
+    frame.place(relx=0.5, rely=0.5, anchor="center")
+
+    tk.Label(
+        frame, text="CONGRATULATIONS!!! YOU SAVED THE STORY", 
+        font=("Arial", 20, "bold"), fg="white", bg="black"
+    ).pack(pady=10)
+
+    tk.Label(
+        frame, text=f"Total points: {player.puntaje}", font=("Arial", 14),
+        fg="white", bg="black"
+    ).pack(pady=10)
+
+    tk.Button(
+        window, text="Go back to start",
+        font=("Arial", 12, "bold"), command=startwindow
+    ).pack(pady=20)
 
 def startwindow():
     clear()
