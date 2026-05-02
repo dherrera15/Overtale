@@ -223,6 +223,17 @@ def endwindow(player):
 
 def startwindow():
     clear()
+
+    def aboutpage():
+        try:
+            archivo = open("about.txt", "r", encoding="utf-8")
+            lines = archivo.read()
+            archivo.close()
+        except:
+            lines = "About file not found."
+        
+        messagebox.showinfo("About Overtale", lines)
+
     personajes = cargarpers()
 
     bkgnd = Image.open("images/backgrounds/start.png")
@@ -233,6 +244,11 @@ def startwindow():
     bglabel.place(x=0, y=0, relwidth = 1, relheight = 1)
     
     tk.Label(window, text="OVERTALE", font=("Arial", 28, "bold"), bg="black", fg="white").pack(pady=10)
+
+    tk.Button(
+        window, text="About...", font=("Arial", 12, "bold"),
+        command=aboutpage, bg="white", fg="black"
+    ).place(x=10, y=10)
 
     tk.Label(window, text="Name:", bg="black", fg="white").pack()
     name_entry = tk.Entry(window, font=("Arial", 12))
@@ -485,6 +501,11 @@ def battlewindow(player, hollow, personajes, chosen=None, enemy=None, msg=None):
     if enemy is None:
         mapwindow(player, personajes)
         return
+    
+    tk.Label(
+        window, text=f"Score: {player.puntaje}", font=("Arial", 16, "bold"),
+        bg="black", fg="white"
+    ).place(x=20, y = 75)
 
     playerimg = ImageTk.PhotoImage(Image.open(f"images/characters/{chosen.name.lower()}.png").resize((250, 250)))
     enemyimg = ImageTk.PhotoImage(Image.open(f"images/characters/{enemy.name.lower()}.png").resize((250, 250)))
@@ -508,7 +529,7 @@ def battlewindow(player, hollow, personajes, chosen=None, enemy=None, msg=None):
     actions = tk.Label(
         window, text=starttext, font=("Arial", 14),
         bg="black", fg="white", width=40,
-        height=6, wraplength=400, justify="center"
+        height=10, wraplength=400, justify="center"
     )
     actions.place(x=420, y=250)
 
@@ -527,6 +548,7 @@ def battlewindow(player, hollow, personajes, chosen=None, enemy=None, msg=None):
 
         prevhp = chosen.currhp
         oldenemy = enemy
+        oldchosen = chosen
 
         chosen, enemy = enemyturn(player, hollow, chosen, enemy)
 
@@ -549,11 +571,11 @@ def battlewindow(player, hollow, personajes, chosen=None, enemy=None, msg=None):
             enemylabel.config(image=newimg)
             enemylabel.image = newimg
         else:
-            dmg = max(1, prevhp - chosen.currhp)
+            dmg = abs(prevhp - chosen.currhp)
 
-            if prevalive and not chosen.estadovida():
+            if prevalive and not oldchosen.estadovida():
                 actions.config(
-                    text=f"{enemy.name} attacks!\nDamage: {dmg}\n{chosen.name} was captured!"
+                    text=f"{enemy.name} attacks!\nDamage: {dmg}\n{oldchosen.name} was captured!"
                 )
             else:
                 actions.config(text=f"{enemy.name} attacks!\nDamage: {dmg}")

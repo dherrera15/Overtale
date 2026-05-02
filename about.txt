@@ -1,0 +1,13 @@
+Prepare for the underground!
+
+Overtale is a Python-developed game that combines turn-based
+combat mechanics with exploration and character progression.
+You, as the player, take on the role of Storykeeper, whose
+objective is to save the underground story from the Hollows,
+and they're up to no good, they want to erase the history by
+capturing the characters!
+The player must build strategic teams and face the computer-
+controlled enemies, and adapt to each battle to progress.
+Thank you for trying out the game! This was developed using
+the Tkinter library for the GUI, object-oriented programming
+and recursion.
