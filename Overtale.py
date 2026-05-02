@@ -43,24 +43,32 @@ class Jugador:
         self.chosen = []
         self.team = []
         self.puntaje = 0
+        self.captured = []
     
     def captura(self, character):
-        if character not in self.chosen:
-            character.recover()
-            self.chosen.append(character)
-            self.puntaje += 1
+        if self.duplicados(character.name):
+            return
+        
+        new = character.separate()
+        new.recover()
+        self.chosen.append(new)
+        self.team.append(new)
+        self.puntaje += 1
     
-    def loss(self, character):
-        if character in self.chosen:
-            self.chosen.remove(character)
-    
-    def playervivos(self, chara = 0):
-        if chara >= len(self.chosen):
+    def duplicados(self, name, i=0):
+        if i >= len(self.chosen):
             return False
-        if self.chosen[chara].estadovida():
+        
+        if self.chosen[i].name == name:
             return True
         
-        return self.playervivos(chara + 1)
+        return self.duplicados(name, i + 1)
+    
+    def loss(self, character):
+        if character in self.team:
+            self.team.remove(character)
+        if character not in self.captured:
+            self.captured.append(character)
     
 class Hollow:
     def __init__(self, name, characters):
@@ -68,40 +76,31 @@ class Hollow:
         self.enemies = characters
 
     def captura(self, character):
-        if character not in self.enemies:
-            character.recover()
-            self.enemies.append(character)
+        new = character.separate()
+        new.recover()
+        self.enemies.append(new)
     
     def loss(self, character):
         if character in self.enemies:
             self.enemies.remove(character)
     
     def persact(self):
-        enemalive = self.persact_aux()
+        enemalive = self.persact_aux(self.enemies)
         
         if len(enemalive) == 0:
             return None
         else:
             return random.choice(enemalive)
     
-    def persact_aux(self, i = 0, alive = None):
-        if alive is None:
-            alive = []
+    def persact_aux(self, lista, i = 0):
 
-        if i >= len(self.enemies):
-            return alive
+        if i >= len(lista):
+            return []
         
-        if self.enemies[i].estadovida():
-            alive.append(self.enemies[i])
+        if lista[i].estadovida():
+            return [lista[i]] + self.persact_aux(lista, i+1)
         
-        return self.persact_aux(i + 1, alive)
-    
-    def hollowvivos(self, chara = 0):
-        if chara >= len(self.enemies):
-            return False
-        if self.enemies[chara].estadovida():
-            return True
-        return self.hollowvivos(chara + 1)
+        return self.persact_aux(lista, i + 1)
 
 def cargarpers():
     personajes = []
@@ -134,13 +133,14 @@ def attack(atkr, dfdr):
         dmg = 1
 
     dfdr.dano(dmg)
+    return dmg
 
 def enemyturn(player, hollow, chosen, currenemy):
     if currenemy is None:
         return chosen, currenemy
     
     prob = 0.3
-    pos = hollow.persact_aux()
+    pos = hollow.persact_aux(hollow.enemies)
 
     if len(pos) <= 1:
         act = "attack"
@@ -154,11 +154,8 @@ def enemyturn(player, hollow, chosen, currenemy):
         newen = random.choice(pos)
 
         if newen != currenemy:
-            print(f"Hollow changes to {newen.name}")
             return chosen, newen
     
-    print(f"{currenemy.name} attacks!")
-
     attack(currenemy, chosen)
 
     if not chosen.estadovida():
@@ -247,14 +244,14 @@ def startwindow():
 
     canvas.create_window((450,0), window=scrollframe, anchor="n")
     canvas.configure(yscrollcommand=scrollbar.set)
-    canvas.bind_all("<MouseWheel>", lambda e: canvas.yview_scroll(int(-1*(e.delta/120)), "units"))
+    canvas.bind("<MouseWheel>", lambda e: canvas.yview_scroll(int(-1*(e.delta/120)), "units"))
 
     canvas.pack(side="left", fill="both", expand=True)
     scrollbar.pack(side="right", fill="y")
 
     chara_vars = []
 
-    for i, chara in enumerate(personajes):
+    for i, chara in enumerate(personajes[15:30]):
         var = tk.IntVar()
 
         img = Image.open(f"images/characters/{chara.name.lower()}.png")
@@ -299,6 +296,7 @@ def startwindow():
         player.chosen = chosen
         player.team = chosen.copy()
         player.hollowdefeat = []
+        player.hollows = hollowtypes(personajes)
 
         mapwindow(player, personajes)
     
@@ -333,21 +331,19 @@ def mapwindow(player, personajes):
         bg="black", fg="white"
     ).place(x=20, y = 75)
 
-    hollows = hollowtypes(personajes)
+    hollows = player.hollows
 
     positions = {
         "Ruins": (120, 550),
-        "Snowdin": (350, 500),
+        "Snowdin": (360, 490),
         "Waterfall":(850, 520),
-        "Hotland": (900, 350),
+        "Hotland": (920, 340),
         "Castle": (530, 250)
     }
 
-    
-    
     for h in hollows:
         if h.name in player.hollowdefeat:
-            text = h.name + "DEFEATED"
+            text = h.name + " DEFEATED"
             color = "gray"
         else:
             text = h.name
@@ -362,80 +358,182 @@ def mapwindow(player, personajes):
 
         tk.Button(
             window, text=text, font=("Arial", 14, "bold"),
-            bg=color, fg="black", width=10, command=enterhollow
+            bg=color, fg="black", command=enterhollow
         ).place(x=x, y=y)
 
 def prebattleselectwindow(player, hollow, personajes):
     clear()
 
-    tk.Label(window, text="Choose 3 characters").pack()
+    bkgnd = Image.open("images/backgrounds/battle.png")
+    bkgnd = bkgnd.resize((1280, 720))
+    bkgnd = ImageTk.PhotoImage(bkgnd)
+    bglabel = tk.Label(window, image=bkgnd)
+    bglabel.image = bkgnd
+    bglabel.place(x=0, y=0, relwidth = 1, relheight = 1)
 
-    varslist = []
+    tk.Label(
+        window, text=f"{hollow.name} - Choose team",
+        font=("Arial", 22, "bold"), bg="black", fg="white"
+    ).pack(pady=20)
 
-    for chara in player.chosen:
+    container = tk.Frame(window, bg="black")
+    container.pack(pady=10)
+
+    canvas = tk.Canvas(container, bg="black", highlightthickness=0, width=900, height=300)
+    scrollbar = tk.Scrollbar(container, orient="vertical", command=canvas.yview)
+
+    scrollframe = tk.Frame(canvas, bg="black")
+    scrollframe.bind(
+        "<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+    )
+
+    canvas.create_window((450,0), window=scrollframe, anchor="n")
+    canvas.configure(yscrollcommand=scrollbar.set)
+    canvas.bind("<MouseWheel>", lambda e: canvas.yview_scroll(int(-1*(e.delta/120)), "units"))
+
+    canvas.pack(side="left", fill="both", expand=True)
+    scrollbar.pack(side="right", fill="y")
+
+    chara_vars = []
+
+    for i, chara in enumerate(player.team):
         var = tk.IntVar()
-        tk.Checkbutton(window, text=chara.name, variable=var).pack()
-        varslist.append((var, chara))
 
+        img = Image.open(f"images/characters/{chara.name.lower()}.png")
+        img = img.resize((90,90))
+        img = ImageTk.PhotoImage(img)
+
+        cb = tk.Checkbutton(
+            scrollframe, text=chara.name, image=img, compound="top",
+            variable=var, bg="black", fg="white", selectcolor="gray"
+        )
+
+        cb.image = img
+        cb.grid(row=i//4, column=i%4, padx=15, pady=12)
+
+        chara_vars.append((var, chara))
+    
     def confirmteam():
-        selected = [c for v, c in varslist if v.get() == 1]
+        selected = [c for v, c in chara_vars if v.get() == 1]
 
         if len(selected) != 3:
-            tk.Label(window, text="Must choose 3", fg="red").pack()
+            messagebox.showwarning(
+                "Invalid Team",
+                "You must choose exactly 3 characters"
+            )
             return
-
+        
         player.team = selected
-        battlewindow(player, hollow, personajes)   
+        battlewindow(player, hollow, personajes)
     
-    tk.Button(window, text="BATTLE!", command=confirmteam).pack()
+    tk.Button(
+        window, text="START BATTLE", font=("Arial", 16, "bold"),
+        bg="white", fg="black", command=confirmteam
+    ).pack(pady=20)
 
-def battlewindow(player, hollow, personajes, chosen=None):
+def battlewindow(player, hollow, personajes, chosen=None, enemy=None, msg=None):
     clear()
+
+    bkgnd = Image.open("images/backgrounds/battle.png")
+    bkgnd = bkgnd.resize((1280, 720))
+    bkgnd = ImageTk.PhotoImage(bkgnd)
+    bglabel = tk.Label(window, image=bkgnd)
+    bglabel.image = bkgnd
+    bglabel.place(x=0, y=0, relwidth=1, relheight=1)
 
     if chosen is None:
         chosen = pepejuana(player.team)
-    
-    enemy = hollow.persact()
 
-    texto = tk.Label(window, font=("Arial", 12))
-    texto.pack()
+    if enemy is None:
+        enemy = hollow.persact()
 
-    labelpoint = tk.Label(window, font=("Arial", 12))
-    labelpoint.pack()
+    if enemy is None:
+        mapwindow(player, personajes)
+        return
 
-    frame = tk.Frame(window)
-    frame.pack()
+    playerimg = ImageTk.PhotoImage(Image.open(f"images/characters/{chosen.name.lower()}.png").resize((250, 250)))
+    enemyimg = ImageTk.PhotoImage(Image.open(f"images/characters/{enemy.name.lower()}.png").resize((250, 250)))
+
+    playerlabel = tk.Label(window, image=playerimg, bg="black")
+    playerlabel.image = playerimg
+    playerlabel.place(x=150, y=200)
+
+    enemylabel = tk.Label(window, image=enemyimg, bg="black")
+    enemylabel.image = enemyimg
+    enemylabel.place(x=880, y=200)
+
+    playerinfo = tk.Label(window, font=("Arial", 14, "bold"), bg="black", fg="white")
+    playerinfo.place(x=150, y=470)
+
+    enemyinfo = tk.Label(window, font=("Arial", 14, "bold"), bg="black", fg="white")
+    enemyinfo.place(x=880, y=470)
+
+    starttext = msg if msg else "The battle has started."
+
+    actions = tk.Label(
+        window, text=starttext, font=("Arial", 14),
+        bg="black", fg="white", width=40,
+        height=6, wraplength=400, justify="center"
+    )
+    actions.place(x=420, y=250)
+
+    buttonframe = tk.Frame(window, bg="black")
+    buttonframe.place(x=450, y=550)
 
     def update():
-        if enemy is None:
-            return
-        
-        texto.config(
-            text=f"{chosen.name} HP: {chosen.currhp}\n"
-                 f"{enemy.name} HP: {enemy.currhp}"
-        )
+        playerinfo.config(text=f"{chosen.name}\nHP: {chosen.currhp}/{chosen.maxhp}")
+        enemyinfo.config(text=f"{enemy.name}\nHP: {enemy.currhp}/{enemy.maxhp}")
 
-        labelpoint.config(text=f"Puntaje: {player.puntaje}")
-    
     def enemturntk():
+        if not playerlabel.winfo_exists() or not enemylabel.winfo_exists():
+            return
+
         nonlocal chosen, enemy
+
+        prevhp = chosen.currhp
+        oldenemy = enemy
+
         chosen, enemy = enemyturn(player, hollow, chosen, enemy)
 
+        prevalive = prevhp > 0
+
         if chosen is None:
+            messagebox.showinfo("Game Over", "You lost.")
             startwindow()
             return
         
+        newplayerimg = ImageTk.PhotoImage(
+            Image.open(f"images/characters/{chosen.name.lower()}.png").resize((250,250))
+        )
+        playerlabel.config(image=newplayerimg)
+        playerlabel.image = newplayerimg
+
+        if enemy != oldenemy:
+            actions.config(text=f"The Hollow changed to {enemy.name}")
+            newimg = ImageTk.PhotoImage(Image.open(f"images/characters/{enemy.name.lower()}.png").resize((250, 250)))
+            enemylabel.config(image=newimg)
+            enemylabel.image = newimg
+        else:
+            dmg = max(1, prevhp - chosen.currhp)
+
+            if prevalive and not chosen.estadovida():
+                actions.config(
+                    text=f"{enemy.name} attacks!\nDamage: {dmg}\n{chosen.name} was captured!"
+                )
+            else:
+                actions.config(text=f"{enemy.name} attacks!\nDamage: {dmg}")
+
         update()
-    
+
     def attacktk():
         nonlocal chosen, enemy
 
-        if enemy is None:
-            return
-        
-        attack(chosen, enemy)
+        dmg = attack(chosen, enemy)
+        actions.config(text=f"{chosen.name} attacks!\nDamage: {dmg}")
 
         if not enemy.estadovida():
+            actions.config(text=f"{enemy.name} defeated!")
+
             hollow.loss(enemy)
             player.captura(enemy)
             enemy = hollow.persact()
@@ -443,28 +541,66 @@ def battlewindow(player, hollow, personajes, chosen=None):
             if enemy is None:
                 player.hollowdefeat.append(hollow.name)
 
-                for chara in player.chosen:
-                    chara.recover()
-                    
+                for c in player.chosen:
+                    c.recover()
+
+                player.team = player.chosen.copy()
+
+                player.captured.clear()
+
+                messagebox.showinfo("Victory!", f"{hollow.name} defeated!")
                 mapwindow(player, personajes)
                 return
-        
-        enemturntk()
-    
+
+            newimg = ImageTk.PhotoImage(Image.open(f"images/characters/{enemy.name.lower()}.png").resize((250, 250)))
+            enemylabel.config(image=newimg)
+            enemylabel.image = newimg
+
+        update()
+        window.after(800, enemturntk)
+
     def changetk():
         clear()
 
-        tk.Label(window, text="Choose character").pack()
+        bkgnd2 = ImageTk.PhotoImage(Image.open("images/backgrounds/battle.png").resize((1280, 720)))
+        bglabel2 = tk.Label(window, image=bkgnd2)
+        bglabel2.image = bkgnd2
+        bglabel2.place(x=0, y=0, relwidth=1, relheight=1)
 
-        for chara in player.team:
-            def chooseinbattle(newchosen=chara):
-                battlewindow(player, hollow, personajes, newchosen)
-            tk.Button(window, text=chara.name, command=chooseinbattle).pack()
-    
-    tk.Button(frame, text="Attack", command=attacktk).pack()
-    tk.Button(frame, text="Change", command=changetk).pack()
+        tk.Label(window, text="Choose character", font=("Arial", 20, "bold"),
+                 bg="black", fg="white").pack(pady=20)
+
+        def show(i=0):
+            if i >= len(player.team):
+                return
+            
+            chara = player.team[i]
+
+            if chara.estadovida():
+                def chooseinbattle(newchosen=chara):
+                    battlewindow(player, hollow, personajes, newchosen, enemy, msg=f"You changed to {newchosen.name}.")
+
+                tk.Button(
+                    window,
+                    text=f"{chara.name} (HP: {chara.currhp})",
+                    font=("Arial", 14),
+                    command=chooseinbattle
+                ).pack(pady=5)
+            
+            show(i+1)
+        
+        show()
+
+    tk.Button(buttonframe, text="ATTACK", font=("Arial", 16, "bold"),
+              bg="red", fg="white", width=10, command=attacktk).pack(side="left", padx=20)
+
+    tk.Button(buttonframe, text="CHANGE", font=("Arial", 16, "bold"),
+              bg="blue", fg="white", width=10, command=changetk).pack(side="left", padx=20)
 
     update()
+
+    if msg:
+            window.after(800, enemturntk)
 
 if __name__ == "__main__":
     startwindow()
