@@ -217,7 +217,7 @@ def endwindow(player):
     ).pack(pady=10)
 
     tk.Button(
-        window, text="Go back to start",
+        frame, text="Go back to start",
         font=("Arial", 12, "bold"), command=startwindow
     ).pack(pady=20)
 
